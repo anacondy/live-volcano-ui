@@ -147,32 +147,9 @@ body {
     z-index: 1;
 }
 
-@keyframes flame-glow {
-    from {
-        transform: rotate(var(--glow-start-angle, 0deg)) scale(1.05);
-    }
-    to {
-        transform: rotate(calc(var(--glow-start-angle, 0deg) + 360deg)) scale(1.05);
-    }
-}
-
 .input-wrapper.glowing .glow-border {
     opacity: 1;
-    background: conic-gradient(from var(--glow-start-angle, 0deg), transparent 0%, var(--accent-color) 20%, transparent 40%);
-    animation: flame-glow 2s linear infinite;
-}
-
-.glow-border::after {
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    width: calc(100% + 6px);
-    height: calc(100% + 6px);
-    border-radius: 50px;
-    background: conic-gradient(from calc(var(--glow-start-angle, 0deg) - 20deg), transparent 50%, #000 70%, transparent 90%);
-    filter: blur(5px);
-    animation: flame-glow 2.5s linear infinite;
+    box-shadow: 0 0 20px #EDFF00, 0 0 40px #EDFF00, 0 0 60px #EDFF00;
 }
 
 #feedback-message {
