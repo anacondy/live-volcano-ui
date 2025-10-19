@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateDisplayDuration(text) {
-        const wordCount = text.trim().split(/\s+/).length;
+        const wordCount = text.trim().split(/\s+/).filter(w => w.length > 0).length;
         // Base formula: ~400ms per word with minimum 2 seconds
         const duration = Math.max(2000, wordCount * 400);
         return duration;
