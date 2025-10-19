@@ -124,13 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.dataset.theme = themes[currentThemeIndex];
         updateCanvasColors();
     });
-    chatInput.addEventListener('mousedown', (e) => {
-        const rect = e.target.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-        const angle = Math.atan2(y, x) * (180 / Math.PI);
-        inputWrapper.style.setProperty('--glow-start-angle', `${angle}deg`);
-    });
     chatInput.addEventListener('focus', () => inputWrapper.classList.add('glowing'));
     chatInput.addEventListener('blur', () => inputWrapper.classList.remove('glowing'));
 
@@ -145,11 +138,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function calculateDisplayDuration(text) {
+        const wordCount = text.trim().split(/\s+/).length;
+        // Base formula: ~400ms per word with minimum 2 seconds
+        const duration = Math.max(2000, wordCount * 400);
+        return duration;
+    }
+
     function showFeedback(message, animationType, duration) {
         clearTimeout(feedbackTimeout);
         if (animationType === 'carved') { applyTextAnimation(feedbackMessage, message, 'carved-char', 50); if (duration) { feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', duration); } } else if (animationType === 'smoky') {
             applyTextAnimation(feedbackMessage, message, 'smoky-char', 30);
-            feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', duration || 5000);
+            const displayDuration = duration || calculateDisplayDuration(message);
+            feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', displayDuration);
         }
     }
 
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showFeedback("Thinking...", 'carved');
             setTimeout(() => {
                 const botReply = getStaticBotResponse(userText);
-                showFeedback(botReply, 'smoky', 8000);
+                showFeedback(botReply, 'smoky');
             }, 700);
         }
     });
