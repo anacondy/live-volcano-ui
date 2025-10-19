@@ -207,3 +207,77 @@ body {
         transform: translate(100px, -40px) skewX(20deg) scale(0.5);
     }
 }
+
+/* Mobile Optimization for 16:9 and 20:9 aspect ratios */
+@media screen and (max-width: 768px) {
+    #theme-switcher {
+        top: 15px;
+        right: 15px;
+        width: 45px;
+        height: 45px;
+    }
+
+    #theme-switcher svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .ui-container {
+        padding: 15px;
+    }
+
+    .input-wrapper {
+        max-width: 100%;
+    }
+
+    #chat-input {
+        padding: 15px 20px;
+        font-size: 1.1em;
+    }
+
+    #feedback-message {
+        font-size: 1.8em;
+        margin-top: 20px;
+        max-width: 100%;
+        padding: 0 10px;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    #theme-switcher {
+        top: 12px;
+        right: 12px;
+        width: 40px;
+        height: 40px;
+    }
+
+    #theme-switcher svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .ui-container {
+        padding: 12px;
+    }
+
+    #chat-input {
+        padding: 12px 18px;
+        font-size: 1em;
+    }
+
+    #feedback-message {
+        font-size: 1.5em;
+        margin-top: 15px;
+    }
+}
+
+/* Specific optimization for tall mobile screens (20:9 aspect ratio) */
+@media screen and (max-width: 480px) and (min-aspect-ratio: 18/9) {
+    .ui-container {
+        padding: 20px 12px;
+    }
+
+    #feedback-message {
+        margin-top: 30px;
+    }
+}
