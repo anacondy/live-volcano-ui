@@ -145,11 +145,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function calculateDisplayDuration(text) {
+        const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+        const wordCount = words.length;
+        
+        // For 5 words or fewer, minimum 2 seconds
+        if (wordCount <= 5) {
+            return 2000;
+        }
+        
+        // For longer text, 1 second per word (e.g., 10 words = 10 seconds)
+        return wordCount * 1000;
+    }
+
     function showFeedback(message, animationType, duration) {
         clearTimeout(feedbackTimeout);
         if (animationType === 'carved') { applyTextAnimation(feedbackMessage, message, 'carved-char', 50); if (duration) { feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', duration); } } else if (animationType === 'smoky') {
             applyTextAnimation(feedbackMessage, message, 'smoky-char', 30);
-            feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', duration || 5000);
+            const displayDuration = duration || calculateDisplayDuration(message);
+            feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', displayDuration);
         }
     }
 
@@ -162,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showFeedback("Thinking...", 'carved');
             setTimeout(() => {
                 const botReply = getStaticBotResponse(userText);
-                showFeedback(botReply, 'smoky', 8000);
+                showFeedback(botReply, 'smoky');
             }, 700);
         }
     });
