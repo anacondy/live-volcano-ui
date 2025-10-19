@@ -124,13 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.dataset.theme = themes[currentThemeIndex];
         updateCanvasColors();
     });
-    chatInput.addEventListener('mousedown', (e) => {
-        const rect = e.target.getBoundingClientRect();
-        const x = e.clientX - rect.left - rect.width / 2;
-        const y = e.clientY - rect.top - rect.height / 2;
-        const angle = Math.atan2(y, x) * (180 / Math.PI);
-        inputWrapper.style.setProperty('--glow-start-angle', `${angle}deg`);
-    });
     chatInput.addEventListener('focus', () => inputWrapper.classList.add('glowing'));
     chatInput.addEventListener('blur', () => inputWrapper.classList.remove('glowing'));
 
@@ -146,16 +139,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateDisplayDuration(text) {
-        const words = text.trim().split(/\s+/).filter(w => w.length > 0);
-        const wordCount = words.length;
-        
-        // For 5 words or fewer, minimum 2 seconds
-        if (wordCount <= 5) {
-            return 2000;
-        }
-        
-        // For longer text, 1 second per word (e.g., 10 words = 10 seconds)
-        return wordCount * 1000;
+        const wordCount = text.trim().split(/\s+/).length;
+        // Base formula: ~400ms per word with minimum 2 seconds
+        const duration = Math.max(2000, wordCount * 400);
+        return duration;
     }
 
     function showFeedback(message, animationType, duration) {
