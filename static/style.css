@@ -84,7 +84,7 @@ body {
 .input-wrapper {
     position: relative;
     width: 100%;
-    max-width: 600px;
+    max-width: 900px;
     animation: fade-in-up 0.8s ease-out 0.2s forwards;
     opacity: 0;
 }
