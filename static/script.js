@@ -2,7 +2,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('background-canvas');
     const ctx = canvas.getContext('2d');
-    const themeSwitcher = document.getElementById('theme-switcher');
     const inputWrapper = document.querySelector('.input-wrapper');
     const chatInput = document.getElementById('chat-input');
     const feedbackMessage = document.getElementById('feedback-message');
@@ -13,8 +12,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const particleSpeed = 0.5;
     const lineOpacity = 0.05;
     let feedbackTimeout;
-    const themes = ['default', 'ocean', 'fire', 'space'];
-    let currentThemeIndex = 0;
     const mouse = { x: null, y: null, radius: 100 };
     window.addEventListener('mousemove', (event) => {
         mouse.x = event.x;
@@ -119,11 +116,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentLineColor = getComputedStyle(document.documentElement).getPropertyValue('--line-color').trim();
         ctx.fillStyle = currentLineColor;
     }
-    themeSwitcher.addEventListener('click', () => {
-        currentThemeIndex = (currentThemeIndex + 1) % themes.length;
-        document.body.dataset.theme = themes[currentThemeIndex];
-        updateCanvasColors();
-    });
     chatInput.addEventListener('focus', () => inputWrapper.classList.add('glowing'));
     chatInput.addEventListener('blur', () => inputWrapper.classList.remove('glowing'));
 
@@ -139,22 +131,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateDisplayDuration(text) {
+        // Minimum 4 seconds as per requirement
         const wordCount = text.trim().split(/\s+/).filter(w => w.length > 0).length;
-        // Base formula: ~400ms per word with minimum 2 seconds
-        const duration = Math.max(2000, wordCount * 400);
+        // Base formula: ~400ms per word with minimum 4 seconds
+        const duration = Math.max(4000, wordCount * 400);
         return duration;
     }
 
     function showFeedback(message, animationType, duration) {
         clearTimeout(feedbackTimeout);
-        if (animationType === 'carved') { applyTextAnimation(feedbackMessage, message, 'carved-char', 50); if (duration) { feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', duration); } } else if (animationType === 'smoky') {
+        if (animationType === 'carved') { 
+            applyTextAnimation(feedbackMessage, message, 'carved-char', 50); 
+            if (duration) { 
+                feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', duration); 
+            } 
+        } else if (animationType === 'smoky') {
             applyTextAnimation(feedbackMessage, message, 'smoky-char', 30);
             const displayDuration = duration || calculateDisplayDuration(message);
             feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', displayDuration);
         }
     }
 
-    function getStaticBotResponse(message) { const user_message = message.toLowerCase(); let bot_response = "I'm not sure how to respond to that. Try asking about 'themes' or 'creator'."; if (user_message.includes('hello') || user_message.includes('hi')) { bot_response = "Hello there! How can I help you today?"; } else if (user_message.includes('theme') || user_message.includes('color')) { bot_response = "You can change the color theme using the palette icon in the top-right corner!"; } else if (user_message.includes('creator') || user_message.includes('who made you')) { bot_response = "I was created from a creative idea and brought to life with code."; } else if (user_message.includes('awesome') || user_message.includes('cool') || user_message.includes('love this')) { bot_response = "Thank you! I'm glad you like it."; } return bot_response; }
+    function getStaticBotResponse(message) { const user_message = message.toLowerCase(); let bot_response = "I'm not sure how to respond to that. Try asking about 'creator' or just say 'hello'."; if (user_message.includes('hello') || user_message.includes('hi')) { bot_response = "Hello there! How can I help you today?"; } else if (user_message.includes('theme') || user_message.includes('color')) { bot_response = "The interface uses a beautiful dark volcanic theme with animated particles!"; } else if (user_message.includes('creator') || user_message.includes('who made you')) { bot_response = "I was created from a creative idea and brought to life with code."; } else if (user_message.includes('awesome') || user_message.includes('cool') || user_message.includes('love this')) { bot_response = "Thank you! I'm glad you like it."; } return bot_response; }
+    
+    // Clear feedback when user starts typing a new message
+    chatInput.addEventListener('input', () => {
+        if (chatInput.value.trim() !== '') {
+            clearTimeout(feedbackTimeout);
+            feedbackMessage.innerHTML = '';
+        }
+    });
+    
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && chatInput.value.trim() !== '') {
             e.preventDefault();
