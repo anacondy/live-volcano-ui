@@ -165,24 +165,19 @@ body {
 .smoky-char {
     display: inline-block;
     opacity: 0;
-    animation: smoky-wind 3s forwards;
+    animation: smoky-appear 1s forwards;
 }
 
-@keyframes smoky-wind {
+@keyframes smoky-appear {
     0% {
         opacity: 0;
         filter: blur(8px);
         transform: translateY(20px) scale(0.8);
     }
-    40% {
-        opacity: 1;
-        filter: blur(1px);
-        transform: translateY(0px) scale(1);
-    }
     100% {
-        opacity: 0;
-        filter: blur(10px);
-        transform: translate(100px, -40px) skewX(20deg) scale(0.5);
+        opacity: 1;
+        filter: blur(0px);
+        transform: translateY(0px) scale(1);
     }
 }
 

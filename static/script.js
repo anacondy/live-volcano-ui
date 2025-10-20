@@ -140,7 +140,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function showFeedback(message, animationType, duration) {
         clearTimeout(feedbackTimeout);
-        if (animationType === 'carved') { applyTextAnimation(feedbackMessage, message, 'carved-char', 50); if (duration) { feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', duration); } } else if (animationType === 'smoky') {
+        if (animationType === 'carved') { 
+            applyTextAnimation(feedbackMessage, message, 'carved-char', 50); 
+            if (duration) { 
+                feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', duration); 
+            } 
+        } else if (animationType === 'smoky') {
             applyTextAnimation(feedbackMessage, message, 'smoky-char', 30);
             const displayDuration = duration || calculateDisplayDuration(message);
             feedbackTimeout = setTimeout(() => feedbackMessage.innerHTML = '', displayDuration);
