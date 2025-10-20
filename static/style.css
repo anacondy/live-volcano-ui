@@ -53,42 +53,20 @@ body {
     z-index: -1;
 }
 
-#theme-switcher {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    background-color: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(5px);
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 10;
-}
-
-#theme-switcher:hover {
-    transform: scale(1.1) rotate(15deg);
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-#theme-switcher svg {
-    width: 28px;
-    height: 28px;
-    color: var(--accent-color);
-    transition: color 0.5s ease;
-}
-
 .ui-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: column-reverse;
     align-items: center;
-    height: 100vh;
     padding: 20px;
+    pointer-events: none;
+}
+
+.ui-container > * {
+    pointer-events: auto;
 }
 
 @keyframes fade-in-up {
@@ -153,7 +131,7 @@ body {
 }
 
 #feedback-message {
-    margin-top: 25px;
+    margin-bottom: 25px;
     font-family: var(--feedback-font);
     font-style: italic;
     font-size: 2.2em;
@@ -210,20 +188,9 @@ body {
 
 /* Mobile Optimization for 16:9 and 20:9 aspect ratios */
 @media screen and (max-width: 768px) {
-    #theme-switcher {
-        top: 15px;
-        right: 15px;
-        width: 45px;
-        height: 45px;
-    }
-
-    #theme-switcher svg {
-        width: 24px;
-        height: 24px;
-    }
-
     .ui-container {
         padding: 15px;
+        padding-bottom: max(15px, env(safe-area-inset-bottom));
     }
 
     .input-wrapper {
@@ -237,27 +204,16 @@ body {
 
     #feedback-message {
         font-size: 1.8em;
-        margin-top: 20px;
+        margin-bottom: 20px;
         max-width: 100%;
         padding: 0 10px;
     }
 }
 
 @media screen and (max-width: 480px) {
-    #theme-switcher {
-        top: 12px;
-        right: 12px;
-        width: 40px;
-        height: 40px;
-    }
-
-    #theme-switcher svg {
-        width: 22px;
-        height: 22px;
-    }
-
     .ui-container {
         padding: 12px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
     }
 
     #chat-input {
@@ -267,7 +223,7 @@ body {
 
     #feedback-message {
         font-size: 1.5em;
-        margin-top: 15px;
+        margin-bottom: 15px;
     }
 }
 
@@ -275,9 +231,10 @@ body {
 @media screen and (max-width: 480px) and (min-aspect-ratio: 18/9) {
     .ui-container {
         padding: 20px 12px;
+        padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
 
     #feedback-message {
-        margin-top: 30px;
+        margin-bottom: 30px;
     }
 }
