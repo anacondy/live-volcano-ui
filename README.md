@@ -21,6 +21,8 @@ An interactive, visually stunning UI featuring a dynamic particle-based animated
 
 👉 **[Live Demo](https://anacondy.github.io/live-volcano-ui/)**
 
+📚 **[Quick Start Guide](QUICKSTART.md)** - Get started in 5 minutes!
+
 ## 📸 Screenshots
 
 ### Desktop View
