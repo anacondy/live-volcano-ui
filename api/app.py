@@ -6,6 +6,7 @@ Provides secure, intelligent responses to student queries
 import os
 import re
 import time
+import logging
 from typing import Dict, Optional
 from urllib.parse import urljoin, urlparse
 
@@ -20,6 +21,13 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -81,7 +89,7 @@ class CollegeWebsiteScraper:
             response.raise_for_status()
             return response.text
         except Exception as e:
-            print(f"Error scraping {url}: {e}")
+            logger.warning(f"Error scraping {url}: {e}")
             return None
     
     def extract_text_from_html(self, html: str) -> str:
@@ -269,9 +277,7 @@ def chat():
     
     except Exception as e:
         # Log error internally but don't expose details to user
-        print(f"Error in chat endpoint: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error(f"Error in chat endpoint: {e}", exc_info=True)
         
         return jsonify({
             'error': 'An error occurred processing your request. Please try again later.'
