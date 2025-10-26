@@ -142,11 +142,9 @@ python api/app.py
 ```
 
 5. **Update frontend configuration:**
-Edit `static/script.js` and update the API URL:
+Edit `static/config.js` and update the PRODUCTION_API_URL:
 ```javascript
-const API_BASE_URL = 'http://localhost:5000'; // For local development
-// or
-const API_BASE_URL = 'https://your-deployed-api-url.com'; // For production
+PRODUCTION_API_URL: 'https://your-deployed-api-url.com'
 ```
 
 6. **Serve the frontend:**
@@ -162,6 +160,14 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions includin
 - Heroku
 - PythonAnywhere
 - Google Cloud Run
+
+### GitHub Pages (Frontend)
+The frontend is automatically deployed via GitHub Pages:
+- Any commits to the main branch automatically update the live site
+- Site URL: https://anacondy.github.io/live-volcano-ui/
+- To enable: Go to repository Settings → Pages → Source: main branch
+
+**Note:** After deploying your backend API, update `static/config.js` with your production API URL and commit the changes.
 
 ## 💬 Usage
 
