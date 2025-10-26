@@ -1,0 +1,21 @@
+{
+  "name": "Live Volcano UI - Gemini API Backend",
+  "description": "Backend API server for Live Volcano UI with Gemini 2.5 Pro integration",
+  "repository": "https://github.com/anacondy/live-volcano-ui",
+  "keywords": ["python", "flask", "gemini", "ai", "api"],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "env": {
+    "GEMINI_API_KEY": {
+      "description": "Your Gemini API key from https://makersuite.google.com/app/apikey",
+      "required": true
+    },
+    "FLASK_DEBUG": {
+      "description": "Set to False for production",
+      "value": "False"
+    }
+  }
+}

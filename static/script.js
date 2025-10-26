@@ -121,13 +121,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyTextAnimation(element, text, charClass, staggerMs) {
         element.innerHTML = '';
-        text.split('').forEach((char, index) => {
-            const span = document.createElement('span');
-            span.className = charClass;
-            span.textContent = char === ' ' ? '\u00A0' : char;
-            span.style.animationDelay = `${index * staggerMs}ms`;
-            element.appendChild(span);
-        });
+        const chars = text.split('');
+        
+        // Use requestAnimationFrame for smoother rendering
+        let charIndex = 0;
+        const addChar = () => {
+            if (charIndex < chars.length) {
+                const span = document.createElement('span');
+                span.className = charClass;
+                span.textContent = chars[charIndex] === ' ' ? '\u00A0' : chars[charIndex];
+                span.style.animationDelay = `${charIndex * staggerMs}ms`;
+                element.appendChild(span);
+                charIndex++;
+                requestAnimationFrame(addChar);
+            }
+        };
+        requestAnimationFrame(addChar);
     }
 
     function calculateDisplayDuration(text) {
@@ -152,7 +161,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function getStaticBotResponse(message) { const user_message = message.toLowerCase(); let bot_response = "I'm not sure how to respond to that. Try asking about 'creator' or just say 'hello'."; if (user_message.includes('hello') || user_message.includes('hi')) { bot_response = "Hello there! How can I help you today?"; } else if (user_message.includes('theme') || user_message.includes('color')) { bot_response = "The interface uses a beautiful dark volcanic theme with animated particles!"; } else if (user_message.includes('creator') || user_message.includes('who made you')) { bot_response = "I was created from a creative idea and brought to life with code."; } else if (user_message.includes('awesome') || user_message.includes('cool') || user_message.includes('love this')) { bot_response = "Thank you! I'm glad you like it."; } return bot_response; }
+    // API Configuration - using config.js
+    const API_BASE_URL = typeof CONFIG !== 'undefined' ? CONFIG.getApiUrl() : 'http://localhost:5000';
+    
+    async function getBotResponse(message) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get response');
+            }
+            
+            const data = await response.json();
+            return data.response;
+        } catch (error) {
+            console.error('API Error:', error);
+            // Fallback to friendly error message
+            if (error.message.includes('Failed to fetch')) {
+                return "I'm having trouble connecting to the server. Please make sure the backend API is running.";
+            }
+            return `Sorry, I encountered an error: ${error.message}`;
+        }
+    }
     
     // Clear feedback when user starts typing a new message
     chatInput.addEventListener('input', () => {
@@ -162,16 +199,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    chatInput.addEventListener('keydown', (e) => {
+    chatInput.addEventListener('keydown', async (e) => {
         if (e.key === 'Enter' && chatInput.value.trim() !== '') {
             e.preventDefault();
             const userText = chatInput.value;
             chatInput.value = '';
+            chatInput.disabled = true; // Disable input while processing
+            
             showFeedback("Thinking...", 'carved');
-            setTimeout(() => {
-                const botReply = getStaticBotResponse(userText);
+            
+            try {
+                const botReply = await getBotResponse(userText);
                 showFeedback(botReply, 'smoky');
-            }, 700);
+            } catch (error) {
+                showFeedback("Sorry, something went wrong. Please try again.", 'smoky');
+            } finally {
+                chatInput.disabled = false;
+                chatInput.focus();
+            }
         }
     });
     setup();
