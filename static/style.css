@@ -181,6 +181,13 @@ body {
     }
 }
 
+/* Optimize animations for better performance */
+.smoky-char, .carved-char {
+    will-change: opacity, transform;
+    backface-visibility: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
 /* Mobile Optimization for 16:9 and 20:9 aspect ratios */
 @media screen and (max-width: 768px) {
     .ui-container {
