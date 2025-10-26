@@ -268,10 +268,13 @@ def chat():
         })
     
     except Exception as e:
+        # Log error internally but don't expose details to user
         print(f"Error in chat endpoint: {e}")
+        import traceback
+        traceback.print_exc()
+        
         return jsonify({
-            'error': 'An error occurred processing your request',
-            'details': str(e) if app.debug else None
+            'error': 'An error occurred processing your request. Please try again later.'
         }), 500
 
 
