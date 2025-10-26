@@ -204,6 +204,9 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const userText = chatInput.value;
             chatInput.value = '';
+            
+            // Blur the input to dismiss the keyboard on mobile
+            chatInput.blur();
             chatInput.disabled = true; // Disable input while processing
             
             showFeedback("Thinking...", 'carved');
@@ -215,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showFeedback("Sorry, something went wrong. Please try again.", 'smoky');
             } finally {
                 chatInput.disabled = false;
-                chatInput.focus();
+                // Don't auto-focus to prevent keyboard from reopening on mobile
             }
         }
     });

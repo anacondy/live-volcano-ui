@@ -63,6 +63,9 @@ body {
     align-items: center;
     padding: 20px;
     pointer-events: none;
+    /* Prevent layout shift when mobile keyboard appears/disappears */
+    transform: translateZ(0);
+    will-change: transform;
 }
 
 .ui-container > * {
