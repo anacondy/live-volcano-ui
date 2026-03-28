@@ -1,23 +1,23 @@
 {
-    "buildCommand": "echo 'No build step needed'",
-    "outputDirectory": ".",
     "public": ".",
+    "buildCommand": "# No build needed",
     "functions": {
         "api/app.py": {
             "runtime": "python3.9"
         }
     },
-    "rewrites": [
-        {
-            "source": "/api/:path*",
-            "destination": "/api/app.py"
-        }
-    ],
     "routes": [
         {
+            "src": "/api/(.*)",
+            "dest": "/api/app.py"
+        },
+        {
+            "src": "/static/(.*)",
+            "dest": "/static/$1"
+        },
+        {
             "src": "/(.*)",
-            "dest": "/index.html",
-            "status": 200
+            "dest": "/index.html"
         }
     ]
 }
