@@ -38,7 +38,7 @@ app = Flask(__name__)
 # Resolve project paths for serving frontend files from the backend.
 API_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(API_DIR)
-FRONTEND_STATIC_DIR = os.path.join(PROJECT_ROOT, 'static')
+FRONTEND_STATIC_DIR = os.path.join(API_DIR, 'static')
 
 # Configure CORS with security
 CORS(app, resources={
@@ -298,6 +298,12 @@ def serve_index():
 @app.route('/static/<path:filename>', methods=['GET'])
 def serve_static(filename: str):
     """Serve frontend static assets."""
+    return send_from_directory(FRONTEND_STATIC_DIR, filename)
+
+
+@app.route('/api/static/<path:filename>', methods=['GET'])
+def serve_api_static(filename: str):
+    """Serve frontend static assets via API namespace for Vercel reliability."""
     return send_from_directory(FRONTEND_STATIC_DIR, filename)
 
 
