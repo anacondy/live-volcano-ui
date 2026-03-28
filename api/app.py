@@ -12,7 +12,7 @@ import threading
 from typing import Dict, Optional, List
 from urllib.parse import urljoin, urlparse
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -34,6 +34,11 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask app
 app = Flask(__name__)
+
+# Resolve project paths for serving frontend files from the backend.
+API_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(API_DIR)
+FRONTEND_STATIC_DIR = os.path.join(PROJECT_ROOT, 'static')
 
 # Configure CORS with security
 CORS(app, resources={
@@ -282,6 +287,26 @@ CRITICAL Instructions:
 Provide your helpful and accurate answer now:"""
     
     return prompt
+
+
+@app.route('/', methods=['GET'])
+def serve_index():
+    """Serve the frontend entrypoint."""
+    return send_from_directory(PROJECT_ROOT, 'index.html')
+
+
+@app.route('/static/<path:filename>', methods=['GET'])
+def serve_static(filename: str):
+    """Serve frontend static assets."""
+    return send_from_directory(FRONTEND_STATIC_DIR, filename)
+
+
+@app.route('/<path:path>', methods=['GET'])
+def serve_spa_fallback(path: str):
+    """Route all non-API paths to the SPA entrypoint."""
+    if path.startswith('api/'):
+        return jsonify({'error': 'Not found'}), 404
+    return send_from_directory(PROJECT_ROOT, 'index.html')
 
 
 @app.route('/api/health', methods=['GET'])
