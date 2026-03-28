@@ -1,6 +1,5 @@
 {
-    "public": ".",
-    "buildCommand": "# No build needed",
+    "public": "public",
     "functions": {
         "api/app.py": {
             "runtime": "python3.9"
@@ -12,12 +11,8 @@
             "dest": "/api/app.py"
         },
         {
-            "src": "/static/(.*)",
-            "dest": "/static/$1"
-        },
-        {
             "src": "/(.*)",
-            "dest": "/index.html"
+            "dest": "/public/index.html"
         }
     ]
 }
