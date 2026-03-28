@@ -51,6 +51,9 @@ body {
     width: 100%;
     height: 100%;
     z-index: -1;
+    pointer-events: none;
+    transform: translateZ(0);
+    will-change: transform;
 }
 
 .ui-container {
@@ -66,7 +69,7 @@ body {
     width: 100%;
 }
 
-.ui-container > * {
+.ui-container>* {
     pointer-events: auto;
 }
 
@@ -122,8 +125,10 @@ body {
     height: 100%;
     border-radius: 50px;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1;
+    will-change: opacity;
+    pointer-events: none;
 }
 
 .input-wrapper.glowing .glow-border {
@@ -153,12 +158,10 @@ body {
 @keyframes carved-effect {
     from {
         opacity: 0;
-        text-shadow: 0 0 10px #000;
         transform: scale(0.5);
     }
     to {
         opacity: 1;
-        text-shadow: 0 0 8px var(--accent-color);
         transform: scale(1);
     }
 }
@@ -166,30 +169,40 @@ body {
 .smoky-char {
     display: inline-block;
     opacity: 0;
-    animation: smoky-appear 1s forwards;
+    animation: smoky-appear 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes smoky-appear {
     0% {
         opacity: 0;
-        filter: blur(8px);
         transform: translateY(20px) scale(0.8);
     }
     100% {
         opacity: 1;
-        filter: blur(0px);
         transform: translateY(0px) scale(1);
     }
 }
 
+
 /* Optimize animations for better performance */
-.smoky-char, .carved-char {
+
+.smoky-char,
+.carved-char {
     will-change: opacity, transform;
     backface-visibility: hidden;
     -webkit-font-smoothing: antialiased;
+    text-shadow: 0 0 8px var(--accent-color);
+    /* Static text shadow for carved chars is faster */
 }
 
+.smoky-char {
+    text-shadow: none;
+    /* smoky chars didn't have shadow originally, ensure none */
+}
+
+
 /* Mobile Optimization for 16:9 and 20:9 aspect ratios */
+
 @media screen and (max-width: 768px) {
     .ui-container {
         position: fixed;
@@ -202,16 +215,13 @@ body {
         padding: 15px;
         padding-bottom: max(15px, env(safe-area-inset-bottom));
     }
-
     .input-wrapper {
         max-width: 100%;
     }
-
     #chat-input {
         padding: 15px 20px;
         font-size: 1.1em;
     }
-
     #feedback-message {
         margin-top: 0;
         margin-bottom: 20px;
@@ -226,25 +236,24 @@ body {
         padding: 12px;
         padding-bottom: max(12px, env(safe-area-inset-bottom));
     }
-
     #chat-input {
         padding: 12px 18px;
         font-size: 1em;
     }
-
     #feedback-message {
         font-size: 1.5em;
         margin-bottom: 15px;
     }
 }
 
+
 /* Specific optimization for tall mobile screens (20:9 aspect ratio) */
+
 @media screen and (max-width: 480px) and (min-aspect-ratio: 18/9) {
     .ui-container {
         padding: 20px 12px;
         padding-bottom: max(20px, env(safe-area-inset-bottom));
     }
-
     #feedback-message {
         margin-bottom: 30px;
     }

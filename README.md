@@ -43,6 +43,9 @@ On mobile, messages appear above the input to remain visible when the keyboard i
 
 ## 🤖 AI Features
 
+### Link From Any AI (OpenAPI)
+An OpenAPI 3.1 Specification is provided in `openapi.yaml` at the root of the project. Any AI Agent or service can import this file to seamlessly natively link to our API endpoints and fetch Subodh PG College context directly.
+
 ### Gemini 2.5 Pro Integration
 The UI now integrates with Google's Gemini 2.5 Pro model to provide intelligent, context-aware responses specifically tailored for Subodh PG College students.
 

@@ -7,7 +7,9 @@ import os
 import re
 import time
 import logging
-from typing import Dict, Optional
+import io
+import threading
+from typing import Dict, Optional, List
 from urllib.parse import urljoin, urlparse
 
 from flask import Flask, request, jsonify
@@ -17,6 +19,7 @@ from flask_limiter.util import get_remote_address
 import google.generativeai as genai
 import requests
 from bs4 import BeautifulSoup
+import PyPDF2
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -68,7 +71,8 @@ CACHE_DURATION = 300  # 5 minutes cache for scraped data
 # Cache for scraped content
 content_cache = {
     'data': None,
-    'timestamp': 0
+    'timestamp': 0,
+    'is_fetching': False
 }
 
 
@@ -91,7 +95,57 @@ class CollegeWebsiteScraper:
         except Exception as e:
             logger.warning(f"Error scraping {url}: {e}")
             return None
-    
+
+    def read_pdf(self, pdf_url: str) -> str:
+        """Fetch and extract text from a PDF securely and quickly"""
+        try:
+            res = self.session.get(pdf_url, timeout=10)
+            res.raise_for_status()
+            reader = PyPDF2.PdfReader(io.BytesIO(res.content))
+            text_pages = []
+            for i, page in enumerate(reader.pages):
+                # Ensure we only process a limited number of pages to stay snappy
+                if i >= 5: break 
+                page_text = page.extract_text()
+                if page_text:
+                    text_pages.append(page_text.strip())
+            return " ".join(text_pages)
+        except Exception as e:
+            logger.warning(f"Failed to read PDF at {pdf_url}: {e}")
+            return ""
+            
+    def _extract_lists_and_pdfs(self, html: str, page_url: str) -> str:
+        """Specifically look for lists, tables, notice links and parse up to 3 recent PDFs"""
+        soup = BeautifulSoup(html, 'html.parser')
+        extracted_info = []
+        
+        # Look for standard notice wrappers and rows
+        rows = soup.find_all(['tr', 'li', 'div'], class_=re.compile(r'notice|exam|row|item', re.I))
+        if not rows:
+            rows = soup.find_all('a', href=re.compile(r'\.pdf|notice|exam', re.I))
+            
+        count = 0
+        for element in rows:
+            if count >= 10: break # Keep context tight
+            text = element.get_text(separator=' ', strip=True)
+            if not text: continue
+            
+            link = element.find('a', href=True) if element.name != 'a' else element
+            pdf_content = ""
+            
+            if link and link.get('href'):
+                href = link['href']
+                full_link = urljoin(page_url, href)
+                if href.lower().endswith('.pdf') and count < 3: # Only read top 3 PDFs to stay fast
+                    pdf_text = self.read_pdf(full_link)
+                    if pdf_text:
+                        pdf_content = f" [PDF CONTENT: {pdf_text[:1000]}...]"
+            
+            extracted_info.append(f"- {text} {pdf_content}")
+            count += 1
+            
+        return "\n".join(extracted_info)
+        
     def extract_text_from_html(self, html: str) -> str:
         """Extract clean text from HTML"""
         soup = BeautifulSoup(html, 'html.parser')
@@ -111,46 +165,70 @@ class CollegeWebsiteScraper:
         return text
     
     def scrape_relevant_sections(self) -> Dict[str, str]:
-        """Scrape relevant sections of the college website"""
+        """Scrape relevant sections and pre-cache them"""
         sections = {}
         
-        # Main pages to scrape
+        # Target specific URls requested
         pages_to_scrape = [
+            ('notice_board', 'notice_board'),
+            ('examination_news', 'examination_news'),
             ('home', ''),
-            ('news', 'news/'),
-            ('notifications', 'notifications/'),
-            ('exams', 'examinations/'),
-            ('syllabus', 'syllabus/'),
         ]
         
         for section_name, path in pages_to_scrape:
+            # Subodh site urls uses absolute routing in user requests
             url = urljoin(self.base_url, path)
             html = self.scrape_page(url)
             if html:
-                text = self.extract_text_from_html(html)
-                sections[section_name] = text[:5000]  # Limit text length
+                # Use enriched PDF extractor for notice and exam boards
+                if 'notice' in section_name or 'exam' in section_name:
+                    enriched = self._extract_lists_and_pdfs(html, url)
+                    sections[section_name] = enriched[:8000] # Fit in standard context models
+                else:
+                    text = self.extract_text_from_html(html)
+                    sections[section_name] = text[:4000]
         
         return sections
 
 
+def update_cache_background():
+    """Background task to fetch all college data without blocking the user"""
+    if content_cache['is_fetching']:
+        return
+    try:
+        content_cache['is_fetching'] = True
+        logger.info("Starting background scrape of Subodh College data...")
+        scraper = CollegeWebsiteScraper(COLLEGE_URL)
+        data = scraper.scrape_relevant_sections()
+        
+        content_cache['data'] = data
+        content_cache['timestamp'] = time.time()
+        logger.info("Background scrape complete. Cache updated.")
+    except Exception as e:
+        logger.error(f"Background scrape failed: {e}")
+    finally:
+        content_cache['is_fetching'] = False
+
 def get_college_context() -> Dict[str, str]:
-    """Get college website context with caching"""
+    """Get college website context with background caching"""
     current_time = time.time()
     
-    # Return cached data if still valid
-    if (content_cache['data'] and 
-        current_time - content_cache['timestamp'] < CACHE_DURATION):
-        return content_cache['data']
-    
-    # Scrape fresh data
-    scraper = CollegeWebsiteScraper(COLLEGE_URL)
-    data = scraper.scrape_relevant_sections()
-    
-    # Update cache
-    content_cache['data'] = data
-    content_cache['timestamp'] = current_time
-    
-    return data
+    # Needs refresh if cache is None or older than CACHE_DURATION
+    needs_refresh = (not content_cache['data'] or 
+                     current_time - content_cache['timestamp'] > CACHE_DURATION)
+                     
+    if needs_refresh and not content_cache['is_fetching']:
+        # Fire background thread
+        thread = threading.Thread(target=update_cache_background)
+        thread.daemon = True
+        thread.start()
+        
+        # If cache is entirely empty, wait very briefly or return empty to keep it snappy.
+        # But for AI accuracy, block a little bit on the first ever request.
+        if not content_cache['data']:
+            thread.join(timeout=8.0) # Wait up to 8s for the first run
+            
+    return content_cache['data'] or {}
 
 
 def normalize_query(query: str) -> str:
@@ -185,25 +263,23 @@ def generate_prompt(user_query: str, college_context: Dict[str, str]) -> str:
         if content:
             context_text += f"\n\n=== {section.upper()} SECTION ===\n{content}"
     
-    prompt = f"""You are a helpful assistant for Subodh PG College students. You have access to the college website information.
+    prompt = f"""You are a smart, fast assistant for SS Jain Subodh PG Autonomous College students. 
+You extract info directly from the parsed college website data and PDF contents provided in the context below.
 
-College Website: {COLLEGE_URL}
-
-Available Information from College Website:
+Context from website (Notice boards, Announcements, Extracted PDFs):
 {context_text}
 
 Student Question: {normalized_query}
 
-Instructions:
-1. If the question is about Subodh PG College (exams, dates, news, notifications, forms, holidays, etc.), search the provided context carefully
-2. Give SHORT, PRECISE, and TO-THE-POINT answers
-3. Format dates clearly (e.g., "29 Oct, 2025 (1st shift)")
-4. If information is not found in the context, politely say you don't have that specific information and suggest checking the college website
-5. Be intelligent - understand context like "III sem" means "3rd semester"
-6. Keep responses under 2-3 sentences unless more detail is absolutely necessary
-7. By default, assume questions are about Subodh PG College unless stated otherwise
+CRITICAL Instructions:
+1. You MUST answer specifically based on the context above. Extract exact dates if asked.
+2. Be extremely BRIEF and TO-THE-POINT. Do not write filler intros. Stay under Gemini API token limits.
+3. Keep answers very snappy. Use Markdown tables if multiple dates/exams are mentioned.
+4. If a user asks in Hindi, OR if translating a Hindi text/PDF context makes more sense, provide a translated & clean response. 
+5. Understand terms like "III sem" = "3rd semester", "I sem" = "1st Semester". 
+6. Format dates cleanly (e.g., "**29 Oct, 2025 (1st shift)**").
 
-Provide a concise, helpful answer:"""
+Provide your helpful and accurate answer now:"""
     
     return prompt
 
@@ -242,8 +318,8 @@ def chat():
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
-                temperature=0.7,
-                max_output_tokens=200,  # Keep responses short
+                temperature=0.3,
+                max_output_tokens=500,  # Allows tables and clear brief lists
                 top_p=0.9,
                 top_k=40
             ),

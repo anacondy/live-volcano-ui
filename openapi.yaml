@@ -1,0 +1,73 @@
+openapi: 3.1.0
+info:
+  title: Volcanic Flow UI - College Assistant API
+  description: >
+    API for interacting with the Subodh PG College assistant. 
+    It fetches live notices, examination news, and parses PDFs in the background.
+    AI agents can use this API to query specific student information (like exam dates).
+  version: 1.0.0
+servers:
+  - url: http://localhost:5000
+    description: Local development server
+  - url: https://your-deployed-api-url.com
+    description: Production server
+paths:
+  /api/health:
+    get:
+      summary: Check health status
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Server is healthy and model is active
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  model:
+                    type: string
+                    example: gemini-2.0-flash-exp
+  /api/chat:
+    post:
+      summary: Ask the Gemini-powered Assistant a question
+      operationId: askQuestion
+      description: >
+        Submits a query to the backend which uses scraped data from Subodh PG College 
+        (Notice Board, Examination News) including translated PDF data to answer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+              properties:
+                message:
+                  type: string
+                  description: The query regarding college notices or exams.
+                  maxLength: 500
+                  example: "When is the III sem elementary computer application exam?"
+      responses:
+        '200':
+          description: Successful AI response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                    description: Brief, to-the-point response potentially including tables or exact dates.
+                  timestamp:
+                    type: number
+                    description: Unix timestamp of the response
+        '400':
+          description: Bad request (e.g. message too long)
+        '429':
+          description: Rate limited (Max 20 per minute)
+        '500':
+          description: Internal server error
