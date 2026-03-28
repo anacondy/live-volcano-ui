@@ -1,24 +1,23 @@
 {
-    "buildCommand": "echo 'Skipping build'",
+    "buildCommand": "echo 'No build step needed'",
     "outputDirectory": ".",
-    "builds": [
+    "public": ".",
+    "functions": {
+        "api/app.py": {
+            "runtime": "python3.9"
+        }
+    },
+    "rewrites": [
         {
-            "src": "api/app.py",
-            "use": "@vercel/python"
+            "source": "/api/:path*",
+            "destination": "/api/app.py"
         }
     ],
     "routes": [
         {
-            "src": "/api/(.*)",
-            "dest": "/api/app.py"
-        },
-        {
-            "src": "/static/(.*)",
-            "dest": "/static/$1"
-        },
-        {
             "src": "/(.*)",
-            "dest": "/index.html"
+            "dest": "/index.html",
+            "status": 200
         }
     ]
 }
