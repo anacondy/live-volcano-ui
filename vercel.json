@@ -1,18 +1,17 @@
 {
-    "public": "public",
+    "$schema": "https://openapi.vercel.sh/vercel.json",
     "functions": {
         "api/app.py": {
             "runtime": "python3.9"
         }
     },
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "/api/app.py"
+    "rewrites": [{
+            "source": "/api/(.*)",
+            "destination": "/api/app.py"
         },
         {
-            "src": "/(.*)",
-            "dest": "/public/index.html"
+            "source": "/(.*)",
+            "destination": "/index.html"
         }
     ]
 }
