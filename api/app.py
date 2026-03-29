@@ -411,10 +411,12 @@ def chat():
     except Exception as e:
         # Log error internally but don't expose details to user
         logger.error(f"Error in chat endpoint: {e}", exc_info=True)
-        
+
         return jsonify({
-            'error': 'An error occurred processing your request. Please try again later.'
-        }), 500
+            'response': 'I am temporarily unavailable due to a server issue. Please try again shortly.',
+            'timestamp': time.time(),
+            'degraded': True
+        })
 
 
 @app.after_request
