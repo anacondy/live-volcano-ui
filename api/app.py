@@ -67,7 +67,14 @@ if not GEMINI_API_KEY:
     raise ValueError("GEMINI_API_KEY environment variable is required")
 
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-2.0-flash-exp')
+
+# Prefer stable production model names and gracefully fall back if one is unavailable.
+DEFAULT_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
+FALLBACK_MODELS = [
+    DEFAULT_MODEL,
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b'
+]
 
 # College website constants
 COLLEGE_URL = "https://www.subodhpgcollege.com/"
@@ -318,7 +325,7 @@ def serve_spa_fallback(path: str):
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
-    return jsonify({'status': 'healthy', 'model': 'gemini-2.0-flash-exp'})
+    return jsonify({'status': 'healthy', 'model': DEFAULT_MODEL})
 
 
 @app.route('/api/chat', methods=['POST'])
@@ -345,35 +352,49 @@ def chat():
         # Generate prompt
         prompt = generate_prompt(user_message, college_context)
         
-        # Generate response with Gemini
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.3,
-                max_output_tokens=500,  # Allows tables and clear brief lists
-                top_p=0.9,
-                top_k=40
-            ),
-            safety_settings=[
-                {
-                    "category": "HARM_CATEGORY_HARASSMENT",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
-                },
-                {
-                    "category": "HARM_CATEGORY_HATE_SPEECH",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
-                },
-                {
-                    "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
-                },
-                {
-                    "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
-                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
-                }
-            ]
-        )
-        
+        response = None
+        model_error = None
+
+        # Try preferred model first, then fallback to known stable models.
+        for model_name in dict.fromkeys(FALLBACK_MODELS):
+            try:
+                active_model = genai.GenerativeModel(model_name)
+                response = active_model.generate_content(
+                    prompt,
+                    generation_config=genai.types.GenerationConfig(
+                        temperature=0.3,
+                        max_output_tokens=500,  # Allows tables and clear brief lists
+                        top_p=0.9,
+                        top_k=40
+                    ),
+                    safety_settings=[
+                        {
+                            "category": "HARM_CATEGORY_HARASSMENT",
+                            "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                        },
+                        {
+                            "category": "HARM_CATEGORY_HATE_SPEECH",
+                            "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                        },
+                        {
+                            "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                            "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                        },
+                        {
+                            "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                            "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                        }
+                    ]
+                )
+                if response and getattr(response, 'text', None):
+                    break
+            except Exception as e:
+                model_error = e
+                logger.warning(f"Model {model_name} failed, trying next fallback: {e}")
+
+        if not response or not getattr(response, 'text', None):
+            raise RuntimeError(f"All configured Gemini models failed: {model_error}")
+
         # Extract response text
         bot_response = response.text.strip()
         
