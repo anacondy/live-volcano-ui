@@ -4,7 +4,7 @@
     --accent-color: #EDFF00;
     --text-color: #ffffff;
     --selection-pink: #ff69b4;
-    --feedback-font: 'Alex Brush', cursive;
+    --feedback-font: 'Alex Brush', 'Segoe Script', 'Brush Script MT', 'Lucida Handwriting', cursive;
 }
 
 body[data-theme='ocean'] {
@@ -139,6 +139,7 @@ body {
 #feedback-message {
     margin-top: 25px;
     font-family: var(--feedback-font);
+    font-weight: 400;
     font-style: italic;
     font-size: 2.2em;
     color: var(--accent-color);
@@ -151,6 +152,9 @@ body {
 
 .carved-char {
     display: inline-block;
+    font-family: var(--feedback-font);
+    font-weight: 400;
+    font-style: italic;
     opacity: 0;
     animation: carved-effect 0.5s forwards;
 }
@@ -168,6 +172,9 @@ body {
 
 .smoky-char {
     display: inline-block;
+    font-family: var(--feedback-font);
+    font-weight: 400;
+    font-style: italic;
     opacity: 0;
     animation: smoky-appear 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
@@ -188,6 +195,9 @@ body {
 
 .smoky-char,
 .carved-char {
+    font-family: var(--feedback-font);
+    font-weight: 400;
+    font-style: italic;
     will-change: opacity, transform;
     backface-visibility: hidden;
     -webkit-font-smoothing: antialiased;
