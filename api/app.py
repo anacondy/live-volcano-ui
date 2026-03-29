@@ -393,7 +393,12 @@ def chat():
                 logger.warning(f"Model {model_name} failed, trying next fallback: {e}")
 
         if not response or not getattr(response, 'text', None):
-            raise RuntimeError(f"All configured Gemini models failed: {model_error}")
+            logger.error(f"All configured Gemini models failed: {model_error}")
+            return jsonify({
+                'response': 'I am temporarily unable to generate a live answer right now. Please try again in a moment.',
+                'timestamp': time.time(),
+                'degraded': True
+            })
 
         # Extract response text
         bot_response = response.text.strip()
