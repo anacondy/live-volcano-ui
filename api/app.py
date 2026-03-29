@@ -332,16 +332,28 @@ Provide your helpful and accurate answer now:"""
 
 def compact_response_text(text: str) -> str:
     """Keep responses short and readable for UI display."""
-    cleaned = re.sub(r'\s+', ' ', (text or '').strip())
-    if not cleaned:
-        return cleaned
+    raw = (text or '').strip()
+    if not raw:
+        return raw
 
-    # Preserve table/list formatting when model intentionally returns structured data.
-    if '|' in cleaned or cleaned.lstrip().startswith('-'):
-        return cleaned[:700]
+    # Preserve concise bullet lists (up to 3 lines).
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
+    bullet_lines = [line for line in lines if re.match(r'^[-*]\s+', line)]
+    if bullet_lines:
+        return '\n'.join(bullet_lines[:3])[:700]
 
+    # Preserve compact tables when present.
+    if '|' in raw and '\n' in raw:
+        return '\n'.join(lines[:8])[:900]
+
+    cleaned = re.sub(r'\s+', ' ', raw)
     sentences = re.split(r'(?<=[.!?])\s+', cleaned)
     concise = ' '.join(sentences[:2]).strip()
+
+    # If sentence parsing over-shrinks, fall back to first chunk safely.
+    if len(concise) < 40:
+        concise = cleaned[:220].rstrip(' ,:;-')
+
     return concise[:320]
 
 
@@ -419,7 +431,7 @@ def chat():
                     prompt,
                     generation_config=genai.types.GenerationConfig(
                         temperature=0.2,
-                        max_output_tokens=180,
+                        max_output_tokens=260,
                         top_p=0.8,
                         top_k=40
                     ),
