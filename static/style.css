@@ -152,6 +152,9 @@ body {
 
 .carved-char {
     display: inline-block;
+    font-family: var(--feedback-font);
+    font-weight: 400;
+    font-style: italic;
     opacity: 0;
     animation: carved-effect 0.5s forwards;
 }
@@ -169,6 +172,9 @@ body {
 
 .smoky-char {
     display: inline-block;
+    font-family: var(--feedback-font);
+    font-weight: 400;
+    font-style: italic;
     opacity: 0;
     animation: smoky-appear 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
