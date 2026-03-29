@@ -337,12 +337,20 @@ def compact_response_text(text: str) -> str:
         return raw
 
     cleaned = re.sub(r'\s+', ' ', raw)
+    # Strip common markdown artifacts to keep UI output plain and readable.
+    cleaned = re.sub(r'\*\*(.*?)\*\*', r'\1', cleaned)
+    cleaned = cleaned.replace('*', '').replace('`', '')
+    cleaned = re.sub(r'^[-\d\.)\s]+', '', cleaned).strip()
+
     sentences = re.split(r'(?<=[.!?])\s+', cleaned)
     concise = ' '.join(sentences[:2]).strip()
 
     # If sentence parsing over-shrinks, fall back to first chunk safely.
     if len(concise) < 40:
         concise = cleaned[:220].rstrip(' ,:;-')
+
+    if concise and concise[-1] not in '.!?':
+        concise = concise.rstrip(' ,:;-') + '.'
 
     return concise[:320]
 
