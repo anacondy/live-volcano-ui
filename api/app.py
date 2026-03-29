@@ -69,16 +69,24 @@ if not GEMINI_API_KEY:
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Prefer stable production model names and gracefully fall back if one is unavailable.
-DEFAULT_MODEL = os.getenv('GEMINI_MODEL', 'models/gemini-1.5-flash')
-FALLBACK_MODELS = [
-    DEFAULT_MODEL,
-    'models/gemini-1.5-flash',
-    'gemini-1.5-flash',
-    'models/gemini-1.5-flash-8b',
-    'gemini-1.5-flash-8b',
-    'models/gemini-2.0-flash',
-    'gemini-2.0-flash'
-]
+DEFAULT_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash').strip()
+
+
+def model_name_variants(name: str) -> List[str]:
+    """Support both `models/...` and plain model names for compatibility."""
+    if name.startswith('models/'):
+        return [name, name.replace('models/', '', 1)]
+    return [name, f'models/{name}']
+
+
+FALLBACK_MODELS = list(dict.fromkeys(
+    model_name_variants(DEFAULT_MODEL) +
+    model_name_variants('gemini-2.5-flash') +
+    model_name_variants('gemini-2.5-flash-lite') +
+    model_name_variants('gemini-2.0-flash') +
+    model_name_variants('gemini-1.5-flash') +
+    model_name_variants('gemini-1.5-flash-8b')
+))
 
 runtime_state = {
     'last_model_error': None,
