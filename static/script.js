@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API Configuration - using config.js
     const API_BASE_URL = typeof CONFIG !== 'undefined' ? CONFIG.getApiUrl() : 'http://localhost:5000';
-    const REQUEST_TIMEOUT_MS = 18000;
+    const REQUEST_TIMEOUT_MS = 30000;
 
     function mapApiIssueToMessage(status, backendMessage) {
         if (status === 400) {

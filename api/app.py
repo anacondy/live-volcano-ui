@@ -318,15 +318,31 @@ Student Question: {normalized_query}
 
 CRITICAL Instructions:
 1. You MUST answer specifically based on the context above. Extract exact dates if asked.
-2. Be extremely BRIEF and TO-THE-POINT. Do not write filler intros. Stay under Gemini API token limits.
-3. Keep answers very snappy. Use Markdown tables if multiple dates/exams are mentioned.
-4. If a user asks in Hindi, OR if translating a Hindi text/PDF context makes more sense, provide a translated & clean response. 
-5. Understand terms like "III sem" = "3rd semester", "I sem" = "1st Semester". 
-6. Format dates cleanly (e.g., "**29 Oct, 2025 (1st shift)**").
+2. Tone must be direct and concise. No intro lines, no filler, no repeated explanation.
+3. Default output limit: maximum 2 short sentences OR maximum 3 bullet points.
+4. Only use a Markdown table when the user explicitly asks for table format or multiple date rows are necessary.
+5. If user asks in Hindi, answer in Hindi (or clean translation) concisely.
+6. Understand terms like "III sem" = "3rd semester", "I sem" = "1st Semester".
+7. Format dates cleanly (e.g., "**29 Oct, 2025 (1st shift)**").
 
 Provide your helpful and accurate answer now:"""
     
     return prompt
+
+
+def compact_response_text(text: str) -> str:
+    """Keep responses short and readable for UI display."""
+    cleaned = re.sub(r'\s+', ' ', (text or '').strip())
+    if not cleaned:
+        return cleaned
+
+    # Preserve table/list formatting when model intentionally returns structured data.
+    if '|' in cleaned or cleaned.lstrip().startswith('-'):
+        return cleaned[:700]
+
+    sentences = re.split(r'(?<=[.!?])\s+', cleaned)
+    concise = ' '.join(sentences[:2]).strip()
+    return concise[:320]
 
 
 @app.route('/', methods=['GET'])
@@ -402,9 +418,9 @@ def chat():
                 response = active_model.generate_content(
                     prompt,
                     generation_config=genai.types.GenerationConfig(
-                        temperature=0.3,
-                        max_output_tokens=500,  # Allows tables and clear brief lists
-                        top_p=0.9,
+                        temperature=0.2,
+                        max_output_tokens=180,
+                        top_p=0.8,
                         top_k=40
                     ),
                     safety_settings=[
@@ -442,7 +458,7 @@ def chat():
             })
 
         # Extract response text
-        bot_response = response.text.strip()
+        bot_response = compact_response_text(response.text)
         runtime_state['last_model_error'] = None
         runtime_state['last_success_at'] = time.time()
         
