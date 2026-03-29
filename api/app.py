@@ -76,6 +76,11 @@ FALLBACK_MODELS = [
     'gemini-1.5-flash-8b'
 ]
 
+runtime_state = {
+    'last_model_error': None,
+    'last_success_at': None
+}
+
 # College website constants
 COLLEGE_URL = "https://www.subodhpgcollege.com/"
 CACHE_DURATION = 300  # 5 minutes cache for scraped data
@@ -325,7 +330,14 @@ def serve_spa_fallback(path: str):
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
-    return jsonify({'status': 'healthy', 'model': DEFAULT_MODEL})
+    return jsonify({
+        'status': 'healthy',
+        'model': DEFAULT_MODEL,
+        'keyConfigured': bool(GEMINI_API_KEY),
+        'degraded': runtime_state['last_model_error'] is not None,
+        'lastModelError': runtime_state['last_model_error'],
+        'lastSuccessAt': runtime_state['last_success_at']
+    })
 
 
 @app.route('/api/chat', methods=['POST'])
@@ -393,6 +405,7 @@ def chat():
                 logger.warning(f"Model {model_name} failed, trying next fallback: {e}")
 
         if not response or not getattr(response, 'text', None):
+            runtime_state['last_model_error'] = type(model_error).__name__ if model_error else 'UnknownModelError'
             logger.error(f"All configured Gemini models failed: {model_error}")
             return jsonify({
                 'response': 'I am temporarily unable to generate a live answer right now. Please try again in a moment.',
@@ -402,6 +415,8 @@ def chat():
 
         # Extract response text
         bot_response = response.text.strip()
+        runtime_state['last_model_error'] = None
+        runtime_state['last_success_at'] = time.time()
         
         return jsonify({
             'response': bot_response,
