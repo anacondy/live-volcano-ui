@@ -240,31 +240,84 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // API Configuration - using config.js
     const API_BASE_URL = typeof CONFIG !== 'undefined' ? CONFIG.getApiUrl() : 'http://localhost:5000';
+    const REQUEST_TIMEOUT_MS = 18000;
+
+    function mapApiIssueToMessage(status, backendMessage) {
+        if (status === 400) {
+            return backendMessage || 'That request format looks invalid. Please try a shorter, clearer question.';
+        }
+        if (status === 401 || status === 403) {
+            return 'The API rejected this request due to access rules. Please check server credentials/config.';
+        }
+        if (status === 404) {
+            return 'Chat endpoint was not found. Please verify the deployment routes and API path.';
+        }
+        if (status === 408) {
+            return 'The request timed out. Please retry with a shorter message.';
+        }
+        if (status === 429) {
+            return 'Too many requests right now. Please wait a few seconds and try again.';
+        }
+        if (status >= 500) {
+            return backendMessage || 'The server is having trouble right now. Please try again in a moment.';
+        }
+        return backendMessage || 'Sorry, the API request failed. Please try again.';
+    }
 
     async function getBotResponse(message) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/chat`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ message: message })
+                body: JSON.stringify({ message: message }),
+                signal: controller.signal
             });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to get response');
+            clearTimeout(timeoutId);
+
+            let data = null;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                data = null;
             }
 
-            const data = await response.json();
-            return data.response;
+            if (!response.ok) {
+                const backendMessage = data && (data.error || data.response);
+                return mapApiIssueToMessage(response.status, backendMessage);
+            }
+
+            if (data && data.degraded) {
+                return data.response || 'The assistant is in temporary fallback mode. Please try again shortly.';
+            }
+
+            if (data && data.response) {
+                return data.response;
+            }
+
+            return 'The API response was empty. Please try again.';
         } catch (error) {
+            clearTimeout(timeoutId);
             console.error('API Error:', error);
-            // Fallback to friendly error message
-            if (error.message.includes('Failed to fetch')) {
+
+            if (error.name === 'AbortError') {
+                return 'The API took too long to respond. Please try again.';
+            }
+
+            if (!navigator.onLine) {
+                return 'You appear to be offline. Please check your internet connection.';
+            }
+
+            if (error.message && error.message.includes('Failed to fetch')) {
                 return "I'm having trouble connecting to the server. Please make sure the backend API is running.";
             }
-            return `Sorry, I encountered an error: ${error.message}`;
+
+            return 'Unexpected API error occurred. Please retry in a moment.';
         }
     }
 
