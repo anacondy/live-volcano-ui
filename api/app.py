@@ -69,17 +69,37 @@ if not GEMINI_API_KEY:
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Prefer stable production model names and gracefully fall back if one is unavailable.
-DEFAULT_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.0-flash')
+DEFAULT_MODEL = os.getenv('GEMINI_MODEL', 'models/gemini-1.5-flash')
 FALLBACK_MODELS = [
     DEFAULT_MODEL,
+    'models/gemini-1.5-flash',
     'gemini-1.5-flash',
-    'gemini-1.5-flash-8b'
+    'models/gemini-1.5-flash-8b',
+    'gemini-1.5-flash-8b',
+    'models/gemini-2.0-flash',
+    'gemini-2.0-flash'
 ]
 
 runtime_state = {
     'last_model_error': None,
     'last_success_at': None
 }
+
+
+def get_candidate_models() -> List[str]:
+    """Build a robust candidate model list from configured and available models."""
+    candidates = list(dict.fromkeys(FALLBACK_MODELS))
+    try:
+        for model in genai.list_models():
+            model_name = getattr(model, 'name', '')
+            methods = getattr(model, 'supported_generation_methods', []) or []
+            if model_name and 'generateContent' in methods:
+                candidates.append(model_name)
+    except Exception as e:
+        logger.warning(f"Could not list Gemini models; using fallback names only: {e}")
+
+    # De-duplicate while preserving order.
+    return list(dict.fromkeys(candidates))
 
 # College website constants
 COLLEGE_URL = "https://www.subodhpgcollege.com/"
@@ -367,8 +387,8 @@ def chat():
         response = None
         model_error = None
 
-        # Try preferred model first, then fallback to known stable models.
-        for model_name in dict.fromkeys(FALLBACK_MODELS):
+        # Try preferred model first, then robust fallbacks including discovered models.
+        for model_name in get_candidate_models():
             try:
                 active_model = genai.GenerativeModel(model_name)
                 response = active_model.generate_content(
