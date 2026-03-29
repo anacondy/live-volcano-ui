@@ -336,13 +336,12 @@ def compact_response_text(text: str) -> str:
     if not raw:
         return raw
 
-    # Preserve concise bullet lists (up to 3 lines).
-    lines = [line.strip() for line in raw.splitlines() if line.strip()]
-    bullet_lines = [line for line in lines if re.match(r'^[-*]\s+', line)]
-    if bullet_lines:
-        return '\n'.join(bullet_lines[:3])[:700]
+    # Preserve structured markdown lists without dropping wrapped continuation lines.
+    if re.search(r'^\s*[-*]\s+', raw, flags=re.MULTILINE):
+        return raw[:700].strip()
 
     # Preserve compact tables when present.
+    lines = [line.strip() for line in raw.splitlines() if line.strip()]
     if '|' in raw and '\n' in raw:
         return '\n'.join(lines[:8])[:900]
 
