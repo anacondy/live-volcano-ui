@@ -349,6 +349,9 @@ def compact_response_text(text: str) -> str:
     if len(concise) < 40:
         concise = cleaned[:220].rstrip(' ,:;-')
 
+    concise = concise.rstrip('"\'')
+    concise = re.sub(r'\b(on|of|the|a|an)\s*$', '', concise, flags=re.IGNORECASE).strip()
+
     if concise and concise[-1] not in '.!?':
         concise = concise.rstrip(' ,:;-') + '.'
 
