@@ -319,8 +319,8 @@ Student Question: {normalized_query}
 CRITICAL Instructions:
 1. You MUST answer specifically based on the context above. Extract exact dates if asked.
 2. Tone must be direct and concise. No intro lines, no filler, no repeated explanation.
-3. Default output limit: maximum 2 short sentences OR maximum 3 bullet points.
-4. Only use a Markdown table when the user explicitly asks for table format or multiple date rows are necessary.
+3. Default output limit: maximum 2 short sentences in plain text.
+4. Do NOT use Markdown bullets, numbering, or tables unless the user explicitly asks for them.
 5. If user asks in Hindi, answer in Hindi (or clean translation) concisely.
 6. Understand terms like "III sem" = "3rd semester", "I sem" = "1st Semester".
 7. Format dates cleanly (e.g., "**29 Oct, 2025 (1st shift)**").
@@ -335,15 +335,6 @@ def compact_response_text(text: str) -> str:
     raw = (text or '').strip()
     if not raw:
         return raw
-
-    # Preserve structured markdown lists without dropping wrapped continuation lines.
-    if re.search(r'^\s*[-*]\s+', raw, flags=re.MULTILINE):
-        return raw[:700].strip()
-
-    # Preserve compact tables when present.
-    lines = [line.strip() for line in raw.splitlines() if line.strip()]
-    if '|' in raw and '\n' in raw:
-        return '\n'.join(lines[:8])[:900]
 
     cleaned = re.sub(r'\s+', ' ', raw)
     sentences = re.split(r'(?<=[.!?])\s+', cleaned)
